@@ -2,9 +2,17 @@
 
 HOSTNAME?=`hostname`
 
+GOOS?=linux
+GOARCH?=amd64
+CGO_ENABLED?=0
+
 .PHONY: setup
 setup: ## setup go modules
 	cd client && go mod tidy
+
+.PHONY: build
+build: ## build Go client
+	cd client && GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=${CGO_ENABLED} go build main.go
 
 .PHONY: run-mitmproxy
 run-mitmproxy: ## run mitmproxy, and listen on port 8080
@@ -14,8 +22,17 @@ run-mitmproxy: ## run mitmproxy, and listen on port 8080
 		mitmproxy/mitmproxy
 
 .PHONY: run-go-client
-run-go-client: setup ## runs syslog Go client
+run-go-client: setup ## runs Go client
 	cd client && go run main.go
+
+.PHONY: run-docker-go-client
+run-docker-go-client: ## runs Go client in docker
+	# copy mitmproxy ca to folder share-ca with postfix .crt
+	mkdir -p share-ca
+	cp mitmproxy1/mitmproxy-ca-cert.pem share-ca/mitmproxy1-ca-cert.crt
+	cp mitmproxy2/mitmproxy-ca-cert.pem share-ca/mitmproxy2-ca-cert.crt
+	docker build -t local/go-client -f client/Dockerfile .
+	docker run -it -v `pwd`/share-ca:/usr/local/share/ca-certificates local/go-client:latest
 
 .PHONY: help
 help: ## prints this help message

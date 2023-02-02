@@ -20,10 +20,11 @@ func req(webUrl, proxyUrl string) error {
 	}
 
 	for i := 1; i <= 2; i++ {
-		serverCert, err := ioutil.ReadFile(fmt.Sprintf("../mitmproxy%d/mitmproxy-ca-cert.pem", i))
+		fileName := fmt.Sprintf("../mitmproxy%d/mitmproxy-ca-cert.pem", i)
+		serverCert, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			log.Printf("fail to read server ca, err=%v", err)
-			return err
+			log.Printf("skip reading server ca %s, err=%v", fileName, err)
+			continue
 		}
 		rootCAs.AppendCertsFromPEM(serverCert)
 	}
